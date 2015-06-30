@@ -38,6 +38,8 @@ from django.http import HttpResponse
 
 import desktop.conf
 from desktop.conf import LDAP
+from hadoop import conf
+from hadoop.fs import webhdfs
 from hadoop.fs.exceptions import WebHdfsException
 from useradmin.models import HuePermission, UserProfile, LdapGroup
 from useradmin.models import get_profile, get_default_user_group
@@ -461,7 +463,7 @@ def _check_remove_last_super(user_obj):
     raise PopupException(_("You cannot remove the last active superuser from the configuration."), error_code=401)
 
 
-def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell):
+def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home=None):
   """
   Syncs the Hue database with the underlying Unix system, by importing users and
   groups from 'getent passwd' and 'getent groups' where those users are in
@@ -522,6 +524,18 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell):
       hue_user.groups = user_groups[username]
     hue_user.save()
     LOG.info(_("Synced user %s from Unix") % hue_user.username)
+
+    # FIXME: This should move to useradmin_sync_with_unix.py
+    cluster_conf = conf.HDFS_CLUSTERS['default']
+    fs = webhdfs.WebHdfs.from_config(cluster_conf)
+
+    # Create home directory if missing
+    if create_home:
+      try:
+        ensure_home_directory(fs, username)
+        LOG.info("Created user %s HDFS home directory if missing" % (username))
+      except (IOError, WebHdfsException), e:
+        request.error(_("Cannot make home directory for user %s." % username))
 
   __users_lock.release()
   __groups_lock.release()

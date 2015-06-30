@@ -32,7 +32,8 @@ class Command(BaseCommand):
       make_option("--max-uid", help=_("Maximum UID to import (Exclusive)."), default=65334),
       make_option("--min-gid", help=_("Minimum GID to import (Inclusive)."), default=500),
       make_option("--max-gid", help=_("Maximum GID to import (Exclusive)."), default=65334),
-      make_option("--check-shell", help=_("Whether or not to check that the user's shell is not /bin/false."), default=True)
+      make_option("--check-shell", help=_("Whether or not to check that the user's shell is not /bin/false."), default=True),
+      make_option("--create-home", help=_("Whether or not to create user's HDFS home directory if missing."), default=False)
   )
 
   def handle(self, *args, **options):
@@ -43,5 +44,6 @@ class Command(BaseCommand):
     min_gid = options['min_gid']
     max_gid = options['max_gid']
     check_shell = options['check_shell']
+    create_home = options['create_home']
 
-    sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell)
+    sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home)
