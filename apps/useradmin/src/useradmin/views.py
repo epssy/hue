@@ -470,7 +470,7 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell):
   global __users_lock, __groups_lock
 
   hadoop_groups = dict((group.gr_name, group) for group in grp.getgrall() \
-      if (group.gr_gid >= min_gid and group.gr_gid < max_gid) or group.gr_name == 'hadoop')
+      if (group.gr_gid >= int(min_gid) and group.gr_gid < int(max_gid)) or group.gr_name == 'hadoop')
   user_groups = dict()
 
   __users_lock.acquire()
@@ -480,6 +480,7 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell):
     try:
       if len(group.gr_mem) != 0:
         hue_group = Group.objects.get(name=name)
+        LOG.info("Found group %s" % (name,))
     except Group.DoesNotExist:
       hue_group = Group(name=name)
       hue_group.save()
@@ -495,7 +496,7 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell):
 
   # Now let's import the users
   hadoop_users = dict((user.pw_name, user) for user in pwd.getpwall() \
-      if (user.pw_uid >= min_uid and user.pw_uid < max_uid) or user.pw_name in grp.getgrnam('hadoop').gr_mem)
+      if (user.pw_uid >= int(min_uid) and user.pw_uid < int(max_uid)) or user.pw_name in grp.getgrnam('hadoop').gr_mem)
   for username, user in hadoop_users.iteritems():
     try:
       if check_shell:
