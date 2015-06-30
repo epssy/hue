@@ -464,8 +464,8 @@ def _check_remove_last_super(user_obj):
 def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell):
   """
   Syncs the Hue database with the underlying Unix system, by importing users and
-  groups from 'getent passwd' and 'getent groups'. This should also pull in
-  users who are accessible via NSS.
+  groups from 'getent passwd' and 'getent groups' where those users are in
+  allowed groups. This should also pull in users who are accessible via NSS.
   """
   global __users_lock, __groups_lock
 
@@ -498,6 +498,10 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell):
   hadoop_users = dict((user.pw_name, user) for user in pwd.getpwall() \
       if (user.pw_uid >= int(min_uid) and user.pw_uid < int(max_uid)) or user.pw_name in grp.getgrnam('hadoop').gr_mem)
   for username, user in hadoop_users.iteritems():
+    # Only consider adding users who are in allowed groups
+    if username not in user_groups:
+      continue
+
     try:
       if check_shell:
         pw_shell = user.pw_shell
