@@ -33,7 +33,8 @@ class Command(BaseCommand):
       make_option("--min-gid", help=_("Minimum GID to import (Inclusive)."), default=500),
       make_option("--max-gid", help=_("Maximum GID to import (Exclusive)."), default=65334),
       make_option("--check-shell", help=_("Whether or not to check that the user's shell is not /bin/false."), default=True),
-      make_option("--create-home", help=_("Whether or not to create user's HDFS home directory if missing."), default=False)
+      make_option("--create-home", help=_("Whether or not to create user's HDFS home directory if missing."), default=False),
+      make_option("--sync-password", help=_("Whether or not to import the user's hashed shadow password if unset."), default=False)
   )
 
   def handle(self, *args, **options):
@@ -46,4 +47,15 @@ class Command(BaseCommand):
     check_shell = options['check_shell']
     create_home = options['create_home']
 
-    sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home)
+    # As a result of no bounding on CryptPasswordHasher.verify() it is possible
+    # to inject a standard Linux shadow password hash as the users password.
+    # On the users first login Django will rehash the password to pbkdf2_sha256
+    # or what ever is dictated by PASSWORD_HASHERS[0].
+
+    # Linux only, requires read access to /etc/shadow, will only replace '!'.
+
+    # WARNING: If the default hash is CryptPasswordHasher this import will lead
+    # to strongly hashed passwords being re-encoded very weakly by Django.
+    sync_password = options['sync_password']
+
+    sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home, sync_password)

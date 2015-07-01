@@ -463,7 +463,7 @@ def _check_remove_last_super(user_obj):
     raise PopupException(_("You cannot remove the last active superuser from the configuration."), error_code=401)
 
 
-def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home=None):
+def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home=None, sync_password=False):
   """
   Syncs the Hue database with the underlying Unix system, by importing users and
   groups from 'getent passwd' and 'getent groups' where those users are in
@@ -513,6 +513,25 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
     except User.DoesNotExist:
       hue_user = User(username=username, password='!', is_active=True, is_superuser=False)
       hue_user.set_unusable_password()
+
+    # Set users password if unset
+    if sync_password && hue_user.password == '!':
+      import spwd
+      import re
+
+      try:
+        shadow_hash = spwd.getspnam(username).sp_pwd
+
+        # Skip any odd or disabled cases or system users
+        if re.match('^[\*!]', shadow_hash):
+          continue
+
+        crypt_encoded = 'crypt$$' + shadow_hash
+        hue_user.password = crypt_encoded
+        LOG.info("Imported hashed password for %s" % (username))
+      except KeyError:
+        # https://bugs.python.org/issue18787
+        LOG.info("Could not access shadow file, permission denied")
 
     # We have to do a save here, because the user needs to exist before we can
     # access the associated list of groups
