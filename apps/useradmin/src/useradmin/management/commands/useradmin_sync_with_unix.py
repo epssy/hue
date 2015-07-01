@@ -34,7 +34,8 @@ class Command(BaseCommand):
       make_option("--max-gid", help=_("Maximum GID to import (Exclusive)."), default=65334),
       make_option("--check-shell", help=_("Whether or not to check that the user's shell is not /bin/false."), default=True),
       make_option("--create-home", help=_("Whether or not to create user's HDFS home directory if missing."), default=False),
-      make_option("--sync-password", help=_("Whether or not to import the user's hashed shadow password if unset."), default=False)
+      make_option("--sync-password", help=_("Whether or not to import the user's hashed shadow password if unset."), default=False),
+      make_option("--force-password", help=_("Import the user's hashed shadow password even if there's one set."), default=False)
   )
 
   def handle(self, *args, **options):
@@ -58,4 +59,6 @@ class Command(BaseCommand):
     # to strongly hashed passwords being re-encoded very weakly by Django.
     sync_password = options['sync_password']
 
-    sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home, sync_password)
+    sync_password = options['force_password']
+
+    sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home, sync_password, force_password)
