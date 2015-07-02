@@ -463,7 +463,7 @@ def _check_remove_last_super(user_obj):
     raise PopupException(_("You cannot remove the last active superuser from the configuration."), error_code=401)
 
 
-def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home=None, sync_password=False, force_password=False):
+def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home=None, sync_password=False, force_password=False, clobber=False):
   """
   Syncs the Hue database with the underlying Unix system, by importing users and
   groups from 'getent passwd' and 'getent groups' where those users are in
@@ -471,13 +471,30 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
   """
   global __users_lock, __groups_lock
 
+  # Import system users
+  hadoop_users = dict((user.pw_name, user) for user in pwd.getpwall() \
+      if (user.pw_uid >= int(min_uid) and user.pw_uid < int(max_uid)) or user.pw_name in grp.getgrnam('hadoop').gr_mem)
+  # Import system groups
   hadoop_groups = dict((group.gr_name, group) for group in grp.getgrall() \
       if (group.gr_gid >= int(min_gid) and group.gr_gid < int(max_gid)) or group.gr_name == 'hadoop')
   user_groups = dict()
 
   __users_lock.acquire()
   __groups_lock.acquire()
-  # Import groups
+
+  # Disable all Hue users not found on the system
+  if clobber:
+      hue_users = User.objects.all()
+      for hue_user in hue_users:
+          if not hadoop_users.has_key(str(hue_user)):
+              hue_user.is_active = False
+              hue_user.is_superuser = False
+              hue_user.groups = []
+              hue_user.set_unusable_password()
+              hue_user.save()
+              LOG.info("Disabled Hue user %s not found on system" % (hue_user))
+
+  # Import system groups into Hue
   for name, group in hadoop_groups.iteritems():
     try:
       if len(group.gr_mem) != 0:
@@ -496,14 +513,7 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
       else:
         user_groups[member].append(hue_group)
 
-  # Now let's import the users
-  hadoop_users = dict((user.pw_name, user) for user in pwd.getpwall() \
-      if (user.pw_uid >= int(min_uid) and user.pw_uid < int(max_uid)) or user.pw_name in grp.getgrnam('hadoop').gr_mem)
   for username, user in hadoop_users.iteritems():
-    # Only consider adding users who are in allowed groups
-    if username not in user_groups:
-      continue
-
     try:
       if check_shell:
         pw_shell = user.pw_shell
@@ -536,7 +546,7 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
     # We have to do a save here, because the user needs to exist before we can
     # access the associated list of groups
     hue_user.save()
-    if username not in user_groups:
+    if username not in user_groups or hue_user.password == '!':
       hue_user.groups = []
     else:
       # Here's where that user to group map we built comes in handy
