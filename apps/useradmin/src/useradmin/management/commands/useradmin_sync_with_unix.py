@@ -36,7 +36,8 @@ class Command(BaseCommand):
       make_option("--create-home", help=_("Whether or not to create user's HDFS home directory if missing."), default=False),
       make_option("--sync-password", help=_("Whether or not to import the user's hashed shadow password if unset."), default=False),
       make_option("--force-password", help=_("Import the user's hashed shadow password even if there's one set."), default=False),
-      make_option("--clobber", help=_("Disable users in Hue that are not found in Unix users and groups."), default=False)
+      make_option("--clobber", help=_("Disable users in Hue that are not found in Unix users and groups."), default=False),
+      make_option("--group", action="append", help=_("Specify groups by name (one per switch)."))
   )
 
   def handle(self, *args, **options):
@@ -63,4 +64,6 @@ class Command(BaseCommand):
     sync_password = options['force_password']
     sync_password = options['clobber']
 
-    sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home, sync_password, force_password, clobber)
+    groups = options['group']
+
+    sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home, sync_password, force_password, clobber, groups)
