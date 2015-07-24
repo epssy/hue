@@ -32,7 +32,7 @@ class Command(BaseCommand):
       make_option("--max-uid", help=_("Maximum UID to import (Exclusive)."), default=65334),
       make_option("--min-gid", help=_("Minimum GID to import (Inclusive)."), default=500),
       make_option("--max-gid", help=_("Maximum GID to import (Exclusive)."), default=65334),
-      make_option("--check-shell", help=_("Whether or not to check that the user's shell is not /bin/false."), default=True),
+      make_option("--check-shell", help=_("Whether or not to check that the user's shell is /bin/false."), default=True),
       make_option("--create-home", help=_("Whether or not to create user's HDFS home directory if missing."), default=False),
       make_option("--sync-password", help=_("Whether or not to import the user's hashed shadow password if unset."), default=False),
       make_option("--force-password", help=_("Import the user's hashed shadow password even if there's one set."), default=False),
