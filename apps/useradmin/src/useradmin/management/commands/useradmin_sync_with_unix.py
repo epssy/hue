@@ -36,7 +36,7 @@ class Command(BaseCommand):
       make_option("--create-home", help=_("Whether or not to create user's HDFS home directory if missing."), default=False),
       make_option("--sync-password", help=_("Whether or not to import the user's hashed shadow password if unset."), default=False),
       make_option("--force-password", help=_("Import the user's hashed shadow password even if there's one set."), default=False),
-      make_option("--clobber", help=_("Disable users in Hue that are not found in Unix users and groups."), default=False),
+      make_option("--clobber", help=_("Disable users in Hue that are not found in Unix users and groups."), default=False)
   )
 
   def handle(self, *args, **options):
