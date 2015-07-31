@@ -61,8 +61,8 @@ class Command(BaseCommand):
     # to strongly hashed passwords being re-encoded very weakly by Django.
     sync_password = options['sync_password']
 
-    sync_password = options['force_password']
-    sync_password = options['clobber']
+    force_password = options['force_password']
+    clobber = options['clobber']
 
     groups = options['group']
 

@@ -471,6 +471,8 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
   """
   global __users_lock, __groups_lock
 
+  if groups is None: groups = []
+
   # Import system users and groups
   system_users = dict()
   system_groups = { group: None for group in groups }
@@ -478,14 +480,14 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
   # legacy, this group was included by default
   system_groups['hadoop'] = None
 
-  for gid in range(min_gid, max_gid):
+  for gid in range(int(min_gid), int(max_gid)):
     try:
       group = grp.getgrgid(gid)
       system_groups[group.gr_name] = group
     except KeyError:
       pass
 
-  for uid in range(min_uid, max_uid):
+  for uid in range(int(min_uid), int(max_uid)):
     try:
       user = pwd.getpwuid(uid)
       system_users[user.pw_name]
@@ -493,6 +495,10 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
       pass
 
   for group in system_groups:
+    if group is None:
+      LOG.info("Requested group %s not found on system" % (name,))
+      continue
+
     try:
       for user in grp.getgrnam(group).gr_mem:
         # This will throw an Exception when a group has a non-existent user
