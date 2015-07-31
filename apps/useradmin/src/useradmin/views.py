@@ -463,7 +463,7 @@ def _check_remove_last_super(user_obj):
     raise PopupException(_("You cannot remove the last active superuser from the configuration."), error_code=401)
 
 
-def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home=None, sync_password=False, force_password=False, clobber=False, groups=[]):
+def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, create_home=None, sync_password=False, force_password=False, clobber=False, groups=None):
   """
   Syncs the Hue database with the underlying Unix system, by importing users and
   groups from 'getent passwd' and 'getent groups' where those users are in
