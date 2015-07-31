@@ -495,10 +495,6 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
       pass
 
   for group in system_groups:
-    if group is None:
-      LOG.info("Requested group %s not found on system" % (name,))
-      continue
-
     try:
       for user in grp.getgrnam(group).gr_mem:
         # This will throw an Exception when a group has a non-existent user
@@ -527,6 +523,10 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
 
   # Import system groups into Hue
   for name, group in system_groups.iteritems():
+    if group is None:
+      LOG.info("Requested group %s not found on system" % (name,))
+      continue
+
     try:
       if len(group.gr_mem) != 0:
         hue_group = Group.objects.get(name=name)
