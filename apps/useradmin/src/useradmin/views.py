@@ -556,7 +556,7 @@ def sync_unix_users_and_groups(min_uid, max_uid, min_gid, max_gid, check_shell, 
       hue_user.set_unusable_password()
 
     # Set users password if unset or full refresh if forced
-    if sync_password and (hue_user.password == '!' or force_password == True):
+    if sync_password and (hue_user.password.startswith('!') or force_password == True):
       import spwd
       import re
 
